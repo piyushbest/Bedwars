@@ -8,6 +8,8 @@ commands:
     description: "Bedwars Command"
   bwsign:
     description: "Bedwars Sign Command"
+  stats:
+      description: "Bedwars Stats"
 permissions:
   bw.start:
     default: op

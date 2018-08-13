@@ -62,12 +62,16 @@ class Bedwars extends PluginBase implements Listener {
 		}
 		$this->getLogger()->info("Regestrierte Arenas:");
 		foreach(glob('/cloud/bw/*.yml') as $file) {
-			$c = new Config("$file");
-			$c->set("players", 0);
-			$c->set("countdown", 60);
-			$c->set("busy", false);
-			$c->save();
-			$this->getLogger()->info(" - ".$file);
+			if($file == "/cloud/bw/ranking.yml") {
+
+			} else {
+				$c = new Config("$file");
+				$c->set("players", 0);
+				$c->set("countdown", 60);
+				$c->set("busy", false);
+				$c->save();
+				$this->getLogger()->info(" - " . $file);
+			}
 		}
 		@mkdir("/cloud/bw");
 		$this->sagiri = $sagiri;
@@ -113,6 +117,13 @@ class Bedwars extends PluginBase implements Listener {
 		if($int == 1) {return f::GOLD."Orange".f::WHITE;}
 		if($int == 10) {return f::DARK_PURPLE."Violett".f::WHITE;}
 		if($int == 0) {return f::WHITE."Weiß";}
+	}
+	function ordinal($number) {
+		$ends = array('th','st','nd','rd','th','th','th','th','th','th');
+		if ((($number % 100) >= 11) && (($number%100) <= 13))
+			return $number. 'th';
+		else
+			return $number. $ends[$number % 10];
 	}
 	public function count(Player $player, int $id = Item::BRICK): int{
 		$all = 0;
@@ -243,7 +254,16 @@ class Bedwars extends PluginBase implements Listener {
 				}
 			}
 		} else {
-			$sender->sendMessage(self::PREFIX."Sorry! /bw is disabled due the missing of Sagiri-API! :(");
+			$sender->sendMessage(self::PREFIX."Sorry! /bwsign is disabled due the missing of Sagiri-API! :(");
+			return false;
+		}
+		if ($this->withSagiri == true) {
+			if($command->getName() == "stats") {
+				$this->printStats($sender);
+				return true;
+			}
+		} else {
+			$sender->sendMessage(self::PREFIX."Sorry! /stats is disabled due the missing of Sagiri-API! :(");
 			return false;
 		}
 	}
@@ -550,15 +570,31 @@ class Bedwars extends PluginBase implements Listener {
 			$c->set("bwwins", 0);
 			$c->set("bwkills", 0);
 			$c->set("bwtode", 0);
+			$c->set("beds", 0);
 			$c->save();
 		}
 		$kills = (int)$c->get("bwkills");
 		$tode = (int)$c->get("bwtode");
-		$kd = (float)$kills+1/$tode+1;
-		$wins = (int)$c->get("bwwins");
+		$kd = (float)($kills+1) / ($tode+1);
+		//$wins = (int)$c->get("bwwins");
 		$spiele = (int)$c->get("bwplays");
 		$beds = (int)$c->get("beds");
-		$siegwarscheinlichkeit = (float)(($spiele / 100) * $wins);
+		//$siegwarscheinlichkeit = (float)(($spiele / 100) * $wins);
+		$player->sendMessage(f::YELLOW."Kills : ".f::GOLD."$kills");
+		$player->sendMessage(f::YELLOW."Tode  : ".f::GOLD."$tode");
+		$player->sendMessage(f::YELLOW."K/D   : ".f::GOLD."$kd");
+		$player->sendMessage(f::YELLOW."Spiele: ".f::GOLD."$spiele");
+		$player->sendMessage(f::YELLOW."Betten: ".f::GOLD."$beds");
+		$player->sendMessage(f::WHITE."===========================");
+		$player->sendMessage(f::RED.  "           TOP 3:          ");
+		$ranking = new Config("/cloud/bw/ranking.yml", Config::YAML);
+		$rankingarray = $ranking->getAll();
+		arsort($rankingarray);
+		$rankingordnung = array_keys($rankingarray);
+		$raningname = array_values($rankingarray);
+		for($i = 0; $i < 3; $i++){
+			$player->sendMessage(f::YELLOW . $this->ordinal($i+1) . f::WHITE ." > ". f::GOLD . $rankingordnung[$i].": ". f::GREEN . $raningname[$i]." Kills");
+		}
 	}
 
 	public function onJoin(PlayerJoinEvent $event) {
@@ -757,10 +793,12 @@ class Bedwars extends PluginBase implements Listener {
 				$c = new Config("/cloud/users/$oname.yml", 2);
 				$wool = $c->get("bett");
 				if($wool == false) {
-					$c->set("kills",(int)($c->get("kills"))+1);$c->save();
+					$c->set("kills",(int)($c->get("bwkills"))+1);$c->save();
+					$ranking = new Config("/cloud/bw/ranking.yml");
+					$ranking->set($damger->getName(), (int)$c->get("bwkills")+1);$ranking->save();
 					$oname = $damger->getName();
 					$c = new Config("/cloud/users/$oname.yml", 2);
-					$c->set("tode",(int)($c->get("tode"))+1);$c->save();
+					$c->set("tode",(int)($c->get("bwtode"))+1);$c->save();
 					$c->set("pos", false);
 					$c->save();
 				}

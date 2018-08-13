@@ -164,6 +164,7 @@ class BwCountdown extends Task
 					$player->sendMessage(f::BOLD . f::GREEN . "Das Spiel beginnt!");
 					$pos = $cp->get("pos");
 					$spawn = $c->get("p$pos");
+					$cp->set("bwplays", (int)$cp->get("bwplays")+1);$cp->save();
 					$pos = new Position($spawn[0], $spawn[1], $spawn[2], $this->level);
 					$player->teleport($pos);
 					$this->plugin->getEq($player);
