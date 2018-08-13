@@ -407,6 +407,51 @@ class Bedwars extends PluginBase implements Listener {
 				$sender->sendMessage($this->prefix . "Uhh.. Komm wieder wenn du die Rechte hast.");
 			}
 		}
+		elseif($itemname == f::RED."Back") {
+			$this->getWaitingItems($player);
+		}
+		elseif ($itemname == f::YELLOW."Team Auswahl") {
+			$this->getTeamSelector($player);
+		}
+		elseif($event->getItem()->getId() == Item::WOOL) {
+			$teamname = $itemname;
+			$teamint = $this->ColorIntToTeamInt($event->getItem()->getDamage());
+			$players = $this->getServer()->getOnlinePlayers();
+			$join = false;
+			$playersInTeam = 0;
+			$playersInOtherTeams = 0;
+			$cm = new Config("/cloud/bw/".$player->getLevel()->getFolderName().".yml", 2);
+			$dimension = $cm->get("dimension");
+			$maxTeamMembers = $dimension[2];
+			foreach($players as $person) {
+				if ($person->getLevel()->getFolderName() == $player->getLevel()->getFolderName()) {
+					$c = new Config("/cloud/users/" . $person->getName() . ".yml", 2);
+					if ($c->get("team") == $teamint) {
+						$playersInTeam++;
+					} else {
+						$playersInOtherTeams++;
+					}
+				}
+			}
+			if($playersInTeam == 0) {
+				$player->sendMessage(self::PREFIX."du bist Team $teamname beigetreten!");
+				$join = true;
+			}
+			elseif($playersInTeam >= 1 && $playersInTeam == 0) {
+				$player->sendMessage(self::PREFIX."Du kannst nicht Team $teamname beitretten!");
+				$join = false;
+			}
+			elseif($playersInTeam =! 0 && $playersInOtherTeams != 0 && $playersInTeam < $maxTeamMembers) {
+				$player->sendMessage(self::PREFIX."du bist Team $teamname beigetreten!");
+				$join = true;
+			}
+			$c = new Config("/cloud/users/".$player->getName().".yml", 2);
+			if($join == true) {
+				$c->set("team", $teamint);
+				$c->save();
+			}
+			$this->getTeamSelector($player);
+		}
 		if ($this->setup == "sign-1" && $player->isOp()) {
 			if ($tile instanceof \pocketmine\tile\Sign) {
 				$c = new Config("/cloud/bw/$this->arena.yml", Config::YAML);
@@ -461,6 +506,7 @@ class Bedwars extends PluginBase implements Listener {
 						$players = $this->getServer()->getOnlinePlayers();
 						$counter = 0;
 						$playerarray = array();
+						counter:
 						foreach ($players as $person) {
 							$level = $person->getLevel()->getFolderName();
 							if ($level == $arena->getFolderName()) {
@@ -469,7 +515,14 @@ class Bedwars extends PluginBase implements Listener {
 							}
 						}
 						$minplayers = (int)substr($dimension, -1)+1;
-						$this->sagiri->sendLevelBrodcast($this->prefix."Es werden min. $minplayers Spieler benötigt!", $arena);
+						$maxTeams = $dimension[0];
+						if($counter > $dimension) {
+							$counter--;
+							goto counter;
+						}
+						$cp->set("team", $counter);
+						$cp->save();
+						$this->sagiri->sendLevelBrodcast($this->prefix."Es werden min. $minplayers Spieler benötigt!", $arena, false);
 						if($counter == $minplayers) {
 							$this->getLogger()->info("Es sind $minplayers Spieler in der Arena ".$arena->getFolderName());
 							foreach($playerarray as $person) {
@@ -482,8 +535,7 @@ class Bedwars extends PluginBase implements Listener {
 							$this->getLogger()->info("Countdown eingeleitet!");
 							return false;
 						}
-						$this->sagiri->sendLevelBrodcast($this->prefix.$player->getName()." joined the Game! ".f::DARK_GRAY."["
-							.f::YELLOW."$counter".f::DARK_GRAY."]", $arena, false);
+						$this->sagiri->sendLevelBrodcast($this->prefix.$player->getName()." joined the Game! ".f::DARK_GRAY."[" .f::YELLOW."$counter".f::DARK_GRAY."]", $arena, false);
 					}
 				}
 			}
@@ -514,6 +566,7 @@ class Bedwars extends PluginBase implements Listener {
 		$pname = $player->getName();
 		$c = new Config("/cloud/users/$pname.yml", 2);
 		$c->set("pos", false);
+		$c->set("bw", false);
 		$c->save();
 		$player->teleport($this->getServer()->getDefaultLevel()->getSafeSpawn()->asPosition());
 		if($this->fjoin == false) {
@@ -535,14 +588,50 @@ class Bedwars extends PluginBase implements Listener {
 
 	public function getWaitingItems(Player $player) : bool {
 		$inv = $player->getInventory();
+		$inv->clearAll();
 		$startround = Item::get(Item::REDSTONE_TORCH, 0, 1);
 		$startround->setCustomName(f::RED."Runde Starten");
 		$lobby = Item::get(Item::SLIME_BALL, 0, 1);
 		$lobby->setCustomName(f::GREEN."Zur Lobby");
+		$teams = Item::get(Item::BED);
+		$teams->setCustomName(f::YELLOW."Team Auswahl");
 		$inv->setItem(8, $startround);
 		$inv->setItem(0, $lobby);
+		$inv->setItem(4, $teams);
 		return true;
 	}
+	public function getTeamSelector(Player $player) : bool {
+		$inv = $player->getInventory();
+		$inv->clearAll();
+		$levelname = $player->getLevel()->getFolderName();
+		$cm = new Config("/cloud/bw/$levelname.yml", 2);
+		$dimension = $cm->get("dimension");
+		$maxTeams = $dimension[0];
+		$inv->setItem(8, Item::get(Item::DYE, 1)->setCustomName(f::RED."Back"));
+		if($maxTeams == 8) {
+			$inv->setItem(7, Item::get(35, 0)->setCustomName($this->ColorInt2Color(0)));
+		}
+		for($currentTeam = 1; $currentTeam-1 == $maxTeams, $currentTeam++;) {
+			if($currentTeam-1 == $maxTeams) {
+				break;
+			}
+			$count = 1;
+			$players = $this->getServer()->getOnlinePlayers();
+			foreach($players as $person) {
+				if ($person->getLevel()->getFolderName() == $player->getLevel()->getFolderName()) {
+					$c = new Config("/cloud/users/" . $person->getName() . ".yml", 2);
+					if ($c->get("team") == $currentTeam - 1) {
+						$count++;
+					}
+				}
+			}
+			$inv->setItem(
+				$currentTeam-2,
+				Item::get(35, $this->teamIntToColorInt($currentTeam-1), $count)->setCustomName($this->ColorInt2Color($this->teamIntToColorInt($currentTeam-1))));
+		}
+		return true;
+	}
+
 	public function getEq(Player $player) {
 		$player->getInventory()->clearAll();
 	}
@@ -646,11 +735,12 @@ class Bedwars extends PluginBase implements Listener {
 	public function pvp(EntityDamageByEntityEvent $event) {
 		$opfer = $event->getEntity();
 		$damger = $event->getDamager();
-		if($damger instanceof Player && $opfer instanceof Player) {
+		$oc = new Config("/cloud/users/".$opfer->getName().".yml", 2);
+		$dc = new Config("/cloud/users/".$damger->getName().".yml", 2);
+		if($damger instanceof Player && $opfer instanceof Player &&
+			$dc->get("bw") == true && $oc->get("bw") == true) {
 			$damage = $event->getFinalDamage();
 			$herzen = $opfer->getHealth();
-			$oc = new Config("/cloud/users/".$opfer->getName().".yml", 2);
-			$dc = new Config("/cloud/users/".$damger->getName().".yml", 2);
 			if($oc->get("pos") == $dc->get("pos")) {
 				$event->setCancelled(true);
 				return true;

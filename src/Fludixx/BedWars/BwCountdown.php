@@ -2,6 +2,8 @@
 
 namespace Fludixx\BedWars;
 
+use pocketmine\entity\object\ItemEntity;
+use pocketmine\item\Item;
 use pocketmine\Server;
 use Fludixx\BedWars\Bedwars;
 use pocketmine\scheduler\Task;
@@ -88,38 +90,101 @@ class BwCountdown extends Task
 			$teamdurchlauf = 0;
 			foreach ($players as $player) {
 				if ($player->getLevel()->getFolderName() == $name) {
-					$player->sendMessage(f::BOLD . f::GREEN . "Das Spiel beginnt!");
-					// Gebe jedem Spieler ein zufälliges Team
+					// TEAM CODE
 					$dimension = (string)$c->get("dimension");
 					$playerProTeam = (int)substr($dimension, -1);
-					if ($teamdurchlauf == $playerProTeam) {
-						$teamint++;
-					} else {
-						$teamdurchlauf++;
-					}
-					$player->setGamemode(0);
-					$player->setXpLevel(0);
-					$spawn = (array)$c->get("p$teamint");
-					$pos = new Position($spawn['0'], $spawn['1'], $spawn['2'], $this->level);
+					$allTeams = $dimension[0];
+					$cp = new Config("/cloud/users/".$player->getName().".yml", 2);
 					$pname = $player->getName();
-					$cp = new Config("/cloud/users/$pname.yml", Config::YAML);
-					$cp->set("pos", $teamint);
-					$cp->set("bett", true);
-					$cp->save();
+					if($cp->get("team") != false) {
+						$cp->set("pos", $cp->get("team"));
+						$cp->set("bett", true);
+						$cp->save();
+					} else {
+						$players = $this->plugin->getServer()->getOnlinePlayers();
+						$t1 = 0;
+						$t2 = 0;
+						$t3 = 0;
+						$t4 = 0;
+						$t5 = 0;
+						$t6 = 0;
+						$t7 = 0;
+						$t8 = 0;
+						foreach($players as $person) {
+							if($person->getLevel()->getFolderName() == $this->level->getFolderName()) {
+								$pc = new Config("/cloud/users/".$person->getName().".yml", 2);
+								for($currentTeam = 1; $currentTeam-1 == $allTeams, $currentTeam++;) {
+									if($currentTeam-1 == $allTeams) {
+										break;
+									}
+									$this->plugin->getLogger()->info($currentTeam-1);
+									if($pc->get("team") == (int)$currentTeam-1) {
+										$var = (string)"t".(int)$currentTeam - (int)1;
+										$$var++;
+										$this->plugin->getLogger()->info($$var);
+									}
+								}
+							}
+						}
+						if($t1 != $playerProTeam) {
+							$cp->set("team", 1);
+							$cp->save();
+						}
+						if($t2 != $playerProTeam) {
+							$cp->set("team", 2);
+							$cp->save();
+						}
+						if($t3 != $playerProTeam) {
+							$cp->set("team", 3);
+							$cp->save();
+						}
+						if($t4 != $playerProTeam) {
+							$cp->set("team", 4);
+							$cp->save();
+						}
+						if($t5 != $playerProTeam) {
+							$cp->set("team", 5);
+							$cp->save();
+						}
+						if($t6 != $playerProTeam) {
+							$cp->set("team", 6);
+							$cp->save();
+						}
+						if($t7 != $playerProTeam) {
+							$cp->set("team", 7);
+							$cp->save();
+						}
+						if($t8 != $playerProTeam) {
+							$cp->set("team", 8);
+							$cp->save();
+						}
+						$cp->set("pos", $cp->get("team"));
+						$cp->save();
+					}
+					$player->sendMessage(f::BOLD . f::GREEN . "Das Spiel beginnt!");
+					$pos = $cp->get("pos");
+					$spawn = $c->get("p$pos");
+					$pos = new Position($spawn[0], $spawn[1], $spawn[2], $this->level);
 					$player->teleport($pos);
-					$player->setSpawn($pos);
-					// Team Ende
 					$this->plugin->getEq($player);
-					$c->set("busy", true);
-					$c->save();
 					$this->plugin->getScheduler()->scheduleRepeatingTask(new BwAsker($this->plugin, $player), 5);
 					$this->plugin->getLogger()->info("Asker Task hat den Wert '$pname' bekommen.");
 				}
-				$this->plugin->getScheduler()->scheduleRepeatingTask(new SpawnTask($this->plugin, $this->level), 10);
-				$this->plugin->getScheduler()->scheduleRepeatingTask(new SpawnIronTask($this->plugin, $this->level), 20 * 30);
-				$this->plugin->getScheduler()->scheduleRepeatingTask(new SpawnGoldTask($this->plugin, $this->level), 20 * 60);
-				$this->plugin->getScheduler()->cancelTask($this->getTaskId());
+
 			}
+			$c->set("busy", true);
+			$c->save();
+			$items = $this->level->getEntities();
+			foreach($items as $item) {
+				if($item instanceof ItemEntity || $item instanceof Item) {
+					$item->despawnFromAll();
+					$item->kill();
+				}
+			}
+			$this->plugin->getScheduler()->scheduleRepeatingTask(new SpawnTask($this->plugin, $this->level), 10);
+			$this->plugin->getScheduler()->scheduleRepeatingTask(new SpawnIronTask($this->plugin, $this->level), 20 * 30);
+			$this->plugin->getScheduler()->scheduleRepeatingTask(new SpawnGoldTask($this->plugin, $this->level), 20 * 60);
+			$this->plugin->getScheduler()->cancelTask($this->getTaskId());
 
 		}
 

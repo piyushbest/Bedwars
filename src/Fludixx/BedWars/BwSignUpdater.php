@@ -102,32 +102,6 @@ class BwSignUpdater extends Task
 				$block instanceof Clay ||
 				$block instanceof Sandstone) {
 				$sign->getLevel()->setBlock($pos, Block::get(Block::STAINED_CLAY, 5));
-			} else {
-				$pos = new Position($sign->asPosition()->getX(), $sign->asPosition()->getY(), $sign->asPosition()->getZ() - 1, $sign->getLevel());
-				if ($block instanceof StainedClay ||
-					$block instanceof HardenedClay ||
-					$block instanceof Clay ||
-					$block instanceof Sandstone) {
-					$sign->getLevel()->setBlock($pos, Block::get(Block::STAINED_CLAY, 5));
-				}
-				else {
-					$pos = new Position($sign->asPosition()->getX(), $sign->asPosition()->getY(), $sign->asPosition()->getZ() + 1, $sign->getLevel());
-					if ($block instanceof StainedClay ||
-						$block instanceof HardenedClay ||
-						$block instanceof Clay ||
-						$block instanceof Sandstone) {
-						$sign->getLevel()->setBlock($pos, Block::get(Block::STAINED_CLAY, 5));
-					}
-					else {
-						$pos = new Position($sign->asPosition()->getX() + 1, $sign->asPosition()->getY(), $sign->asPosition()->getZ(), $sign->getLevel());
-						if ($block instanceof StainedClay ||
-							$block instanceof HardenedClay ||
-							$block instanceof Clay ||
-							$block instanceof Sandstone) {
-							$sign->getLevel()->setBlock($pos, Block::get(Block::STAINED_CLAY, 5));
-						}
-					}
-				}
 			}
 
 		}

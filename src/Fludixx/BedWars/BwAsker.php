@@ -15,7 +15,7 @@ use pocketmine\Player;
 class BwAsker extends Task
 {
 	public $plugin;
-	public $sign;
+	public $player;
 
 	public function __construct(Bedwars $plugin, Player $player)
 	{
@@ -64,6 +64,8 @@ class BwAsker extends Task
 					$pename = $person->getName();
 					$pc = new Config("/cloud/users/$pename.yml", Config::YAML);
 					$pos = $pc->get("pos");
+					$pc->set("bw", false);
+					$pc->save();
 					$person->sendMessage($this->plugin->prefix."$name ist Ausgeschieden!");
 				}
 			}
@@ -81,11 +83,6 @@ class BwAsker extends Task
 		foreach($players as $person) {
 			if($person->getLevel()->getFolderName() == $arenaname) {
 				$counter++;
-				$pname = $person->getName();
-				$cc = new Config("/cloud/users/$pname.yml", Config::YAML);
-				$cpos = (int)$cc->get("pos");
-				$teamcountervar = "t$cpos";
-				$this->$teamcountervar = $this->$teamcountervar++;
 			}
 		}
 
@@ -146,6 +143,8 @@ class BwAsker extends Task
 				$pname = $person->getName();
 				$cp = new Config("/cloud/users/$pname.yml", 2);
 				$cp->set("pos", false);
+				$cp->set("bw". false);
+				$cp->save();
 				$person->getInventory()->clearAll();
 				$levelname = $player->getLevel()->getFolderName();
 				$player->getLevel()->unload();

@@ -51,9 +51,11 @@ class SpawnTask extends Task
 					if ($label == $spawn) {
 						if ($label == $spawn) {
 							$pos = new Position($tile->getX(), $tile->getY() + 2, $tile->getZ(), $tile->getLevel());
-							$lager = $this->level->getTile($pos);
-							if ($lager instanceof Chest || $lager instanceof Hopper) {
-								$lager->getInventory()->addItem($item);
+							$players = $this->plugin->getServer()->getOnlinePlayers();
+							foreach($players as $player) {
+								if($player->distance($pos) <= 6) {
+									$map->dropItem($pos, $item);
+								}
 							}
 						}
 					}
