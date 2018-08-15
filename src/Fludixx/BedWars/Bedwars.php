@@ -805,7 +805,7 @@ class Bedwars extends PluginBase implements Listener {
 						$this->getEq($player);
 						$player->setHealth(20);
 						$player->setFood(20);
-						$name = $player-$this->getName();
+						$name = $player->getName();
 						$c = new Config("/cloud/users/$name.yml", 2);
 						$levelname = $player->getLevel()->getFolderName();
 						$opos = $c->get("pos");
