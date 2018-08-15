@@ -167,7 +167,7 @@ class BwCountdown extends Task
 					$cp->set("bwplays", (int)$cp->get("bwplays")+1);$cp->save();
 					$pos = new Position($spawn[0], $spawn[1], $spawn[2], $this->level);
 					$player->teleport($pos);
-					$player->setGamemode(2);
+					$player->setGamemode(0);
 					$this->plugin->getEq($player);
 					$this->plugin->getScheduler()->scheduleRepeatingTask(new BwAsker($this->plugin, $player), 5);
 					$this->plugin->getLogger()->info("Asker Task hat den Wert '$pname' bekommen.");

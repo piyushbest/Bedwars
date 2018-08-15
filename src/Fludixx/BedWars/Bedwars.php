@@ -292,6 +292,9 @@ class Bedwars extends PluginBase implements Listener {
 		if($event->getBlock()->getId() == Item::WEB) {
 			$this->getScheduler()->scheduleDelayedTask(new CobwebTask($this, $event->getBlock()), 100);
 		}
+		if($pos == false) {
+			$event->setCancelled(true);
+		}
 		if($pos != false) {
 			$event->setCancelled(false);
 			return true;
@@ -672,11 +675,13 @@ class Bedwars extends PluginBase implements Listener {
 		$dimension = $cm->get("dimension");
 		$maxTeams = $dimension[0];
 		$inv->setItem(8, Item::get(Item::DYE, 1)->setCustomName(f::RED."Back"));
+		/*
 		if($maxTeams == 8) {
 			$inv->setItem(7, Item::get(35, 0)->setCustomName($this->ColorInt2Color(0)));
 		}
-		for($currentTeam = 1; $currentTeam-1 == $maxTeams, $currentTeam++;) {
-			if($currentTeam-1 == $maxTeams) {
+		*/
+		for($currentTeam = 1; $currentTeam-1 == $maxTeams+1, $currentTeam++;) {
+			if($currentTeam-1 == $maxTeams+1) {
 				break;
 			}
 			$count = 1;

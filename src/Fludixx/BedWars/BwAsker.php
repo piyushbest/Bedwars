@@ -137,7 +137,7 @@ class BwAsker extends Task
 			$c->save();
 			$player->teleport($this->plugin->getServer()->getDefaultLevel()->getSafeSpawn());
 			$player->getInventory()->clearAll();
-			$player->setLevel(0);
+			$player->setXpLevel(0);
 			$arena->unload();
 			$this->plugin->getServer()->loadLevel($arenaname);
 			$this->plugin->getServer()->getLevelByName($arenaname)->setAutoSave(false);
