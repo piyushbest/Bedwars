@@ -12,6 +12,7 @@ use pocketmine\event\inventory\CraftItemEvent;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerExhaustEvent;
 use pocketmine\event\player\PlayerJoinEvent;
+use pocketmine\event\player\PlayerMoveEvent;
 use pocketmine\level\particle\FloatingTextParticle;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\TextFormat as f;
@@ -794,6 +795,38 @@ class Bedwars extends PluginBase implements Listener {
 			if(!$pos) {
 				$event->setCancelled(true);
 			}
+			if($event->getCause() == EntityDamageEvent::CAUSE_FALL) {
+				$player = $event->getEntity();
+				if($player instanceof Player) {
+					$damage = $event->getFinalDamage();
+					$herzen = $player->getHealth();
+					if($herzen - $damage <= 0) {
+						$event->setCancelled(true);
+						$this->getEq($player);
+						$player->setHealth(20);
+						$player->setFood(20);
+						$name = $player-$this->getName();
+						$c = new Config("/cloud/users/$name.yml", 2);
+						$levelname = $player->getLevel()->getFolderName();
+						$opos = $c->get("pos");
+						$lc = new Config("/cloud/bw/$levelname.yml", 2);
+						$spawn = $lc->get("p$opos");
+						$pos = new Position($spawn[0], $spawn[1], $spawn[2], $player->getLevel());
+						$player->teleport($pos);
+						$wool = $c->get("bett");
+						$this->sagiri->sendLevelBrodcast(self::PREFIX."$name sah den Boden unter sich nicht...", $player->getLevel(), false);
+						if($wool == false) {
+							$c->set("kills",(int)($c->get("bwkills"))+1);$c->save();
+							$ranking = new Config("/cloud/bw/ranking.yml");
+							$ranking->set($player->getName(), (int)$c->get("bwkills")+1);$ranking->save();
+							$c = new Config("/cloud/users/$name.yml", 2);
+							$c->set("tode",(int)($c->get("bwtode"))+1);$c->save();
+							$c->set("pos", false);
+							$c->save();
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -812,7 +845,7 @@ class Bedwars extends PluginBase implements Listener {
 			if($herzen - $damage <= 0) {
 				$event->setCancelled(true);
 				$opfer->setHealth(20);
-				$opfer->getInventory()->clearAll();
+				$this->getEq($opfer);
 				$levelname = $damger->getLevel()->getFolderName();
 				$opos = $oc->get("pos");
 				$lc = new Config("/cloud/bw/$levelname.yml", 2);
