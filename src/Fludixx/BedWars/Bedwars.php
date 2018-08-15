@@ -297,18 +297,15 @@ class Bedwars extends PluginBase implements Listener {
 		}
 		if($pos != false) {
 			$event->setCancelled(false);
-			return true;
 		}
 		if($pos == false && $player->isOp()) {
 			$event->setCancelled(false);
-			return true;
 		}
 		if (($this->setup == null || $this->setup == "sign-1") && $player->isOp() && $pos != false) {
 			if($event->getBlock()->getId() == Item::WEB) {
 				$this->getScheduler()->scheduleDelayedTask(new CobwebTask($this, $event->getBlock()), 100);
 			}
-			return true;
-		} else {
+		}
 		if
 			($this->setup == "8x8-1"){
 			$event->setCancelled(true);
@@ -419,7 +416,6 @@ class Bedwars extends PluginBase implements Listener {
 			$player->teleport($this->getServer()->getDefaultLevel()->getSafeSpawn());
 			$this->setup = null;
 		}
-		}
 	}
 
 	public function onInteract(PlayerInteractEvent $event)
@@ -462,7 +458,7 @@ class Bedwars extends PluginBase implements Listener {
 		elseif ($itemname == f::YELLOW."Team Auswahl") {
 			$this->getTeamSelector($player);
 		}
-		elseif($event->getItem()->getId() == Item::WOOL) {
+		elseif($event->getItem()->getId() == Item::WOOL && $this->setup == null) {
 			$teamname = $itemname;
 			$teamint = $this->ColorIntToTeamInt($event->getItem()->getDamage());
 			$players = $this->getServer()->getOnlinePlayers();
