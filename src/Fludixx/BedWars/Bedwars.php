@@ -31,7 +31,6 @@ use pocketmine\level\sound\GhastShootSound;
 
 class Bedwars extends PluginBase implements Listener {
 
-	const IMPLEMENTED = array("8x1");
 	const NAME = f::DARK_GRAY."[".f::RED."Bed".f::WHITE."Wars".f::DARK_GRAY."]";
 	const PREFIX = self::NAME."".f::DARK_GRAY." | ".f::WHITE;
 	const VERSION = 1;
@@ -266,6 +265,22 @@ class Bedwars extends PluginBase implements Listener {
 			$sender->sendMessage(self::PREFIX."Sorry! /stats is disabled due the missing of Sagiri-API! :(");
 			return false;
 		}
+		if($command->getName() == "bwupdate") {
+			if ($sender instanceof Player) {
+				$levelname = $sender->getLevel()->getFolderName();
+				$this->getLogger()->info($this->prefix . "Initialisiere SignUpdater auf $levelname...");
+				$tiles = $this->getServer()->getDefaultLevel()->getTiles();
+				foreach ($tiles as $tile) {
+					if ($tile instanceof \pocketmine\tile\Sign) {
+						$text = $tile->getText();
+						if ($text[0] == self::NAME || $text[0] == f::RED . "Bedwars") {
+							$this->getScheduler()->scheduleRepeatingTask(new BwSignUpdater($this, $tile), 20);
+							$this->getLogger()->info("1. SignUpdater Task wurde gestartet!");
+						}
+					}
+				}
+			}
+		}
 	}
 
 	public function onPlace(BlockPlaceEvent $event)
@@ -274,6 +289,17 @@ class Bedwars extends PluginBase implements Listener {
 		$name = $player->getName();
 		$c = new Config("/cloud/users/$name.yml", Config::YAML);
 		$pos = $c->get("pos");
+		if($event->getBlock()->getId() == Item::WEB) {
+			$this->getScheduler()->scheduleDelayedTask(new CobwebTask($this, $event->getBlock()), 100);
+		}
+		if($pos != false) {
+			$event->setCancelled(false);
+			return true;
+		}
+		if($pos == false && $player->isOp()) {
+			$event->setCancelled(false);
+			return true;
+		}
 		if (($this->setup == null || $this->setup == "sign-1") && $player->isOp() && $pos != false) {
 			if($event->getBlock()->getId() == Item::WEB) {
 				$this->getScheduler()->scheduleDelayedTask(new CobwebTask($this, $event->getBlock()), 100);
@@ -502,16 +528,18 @@ class Bedwars extends PluginBase implements Listener {
 				$text = $tile->getText();
 				if ($text['0'] == self::NAME) {
 					$player->sendMessage($this->prefix . "Du wirst Teleportiert...");
+					$player->setGamemode(2);
 					$cp = new Config("/cloud/users/$name.yml", Config::YAML);
 					$cp->set("pos", false);
 					$cp->save();
 					$this->getServer()->loadLevel((string)$text['3']);
+					$this->getServer()->getLevelByName((string)$text['3'])->setAutoSave(false);
 					$cplayercount = (int)$text[2][3];
 					$c = new Config("/cloud/bw/" . $text[3] . ".yml", Config::YAML);
 					$dimension = $c->get("dimension");
 					$playeramout = eval("return $dimension;");
 					if ($cplayercount == $playeramout) {
-						$tile->setLine(0, f::RED . "BedWars");
+						$tile->setLine(0, f::RED . "Bedwars");
 						$player->sendMessage($this->prefix . "Uhh.. Die Arena ist voll oder schon gestartet.");
 						return false;
 					} else {
@@ -612,7 +640,7 @@ class Bedwars extends PluginBase implements Listener {
 			foreach($tiles as $tile) {
 				if($tile instanceof \pocketmine\tile\Sign) {
 					$text = $tile->getText();
-					if($text[0] == self::NAME || $text[0] == f::RED."BedWars") {
+					if($text[0] == self::NAME || $text[0] == f::RED."Bedwars") {
 						$this->getScheduler()->scheduleRepeatingTask(new BwSignUpdater($this, $tile), 20);
 						$this->getLogger()->info("SignUpdater Task wurde gestartet!");
 					}
@@ -773,8 +801,7 @@ class Bedwars extends PluginBase implements Listener {
 		$damger = $event->getDamager();
 		$oc = new Config("/cloud/users/".$opfer->getName().".yml", 2);
 		$dc = new Config("/cloud/users/".$damger->getName().".yml", 2);
-		if($damger instanceof Player && $opfer instanceof Player &&
-			$dc->get("bw") == true && $oc->get("bw") == true) {
+		if($damger instanceof Player && $opfer instanceof Player) {
 			$damage = $event->getFinalDamage();
 			$herzen = $opfer->getHealth();
 			if($oc->get("pos") == $dc->get("pos")) {
@@ -785,7 +812,12 @@ class Bedwars extends PluginBase implements Listener {
 				$event->setCancelled(true);
 				$opfer->setHealth(20);
 				$opfer->getInventory()->clearAll();
-				$opfer->teleport($opfer->getSpawn());
+				$levelname = $damger->getLevel()->getFolderName();
+				$opos = $oc->get("pos");
+				$lc = new Config("/cloud/bw/$levelname.yml", 2);
+				$spawn = $lc->get("p$opos");
+				$pos = new Position($spawn[0], $spawn[1], $spawn[2], $damger->getLevel());
+				$opfer->teleport($pos);
 				$this->sagiri->sendLevelBrodcast(self::PREFIX.f::YELLOW.$damger->getName().f::WHITE." hat ".f::YELLOW
 					.$opfer->getName().f::WHITE." getötet!",
 						$damger->getLevel(), false);
@@ -805,6 +837,7 @@ class Bedwars extends PluginBase implements Listener {
 			}
 		}
 	}
+
 	public function onTnteract(PlayerInteractEvent $event) {
 		$item = $event->getItem();
 		if($item->getId() == Item::BLAZE_ROD) {

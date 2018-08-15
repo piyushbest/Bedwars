@@ -3,6 +3,7 @@ namespace Fludixx\BedWars;
 
 use pocketmine\item\Item;
 use pocketmine\level\particle\CriticalParticle;
+use pocketmine\math\Vector3;
 use pocketmine\Server;
 use Fludixx\BedWars\Bedwars;
 use pocketmine\scheduler\Task;
@@ -50,11 +51,12 @@ class SpawnTask extends Task
 				foreach ($spawnable as $label => $item) {
 					if ($label == $spawn) {
 						if ($label == $spawn) {
-							$pos = new Position($tile->getX(), $tile->getY() + 2, $tile->getZ(), $tile->getLevel());
+							$pos = new Position($tile->getX()+0.5, $tile->getY() + 2, $tile->getZ()+0.5, $tile->getLevel
+							());
 							$players = $this->plugin->getServer()->getOnlinePlayers();
 							foreach($players as $player) {
 								if($player->distance($pos) <= 6) {
-									$map->dropItem($pos, $item);
+									$map->dropItem($pos, $item, new Vector3(0, 0.1, 0));
 								}
 							}
 						}

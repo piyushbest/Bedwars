@@ -26,11 +26,6 @@ class BwAsker extends Task
 
 		$this->plugin = $plugin;
 		$this->player = $player;
-		$maxteams = [1, 2, 3, 4, 5, 6, 7, 8];
-		foreach($maxteams as $team) {
-			$teamvar = "t$team";
-			$this->$teamvar = 0;
-		}
 	}
 
 	public function onRun(int $tick)
@@ -115,8 +110,6 @@ class BwAsker extends Task
 			}
 		}
 
-		$tpos = "t$pos";
-		$teamamount = $this->$tpos+1;
 		$player->addActionBarMessage(
 			f::RESET.f::WHITE."$blank $blank Team: ".f::WHITE .$this->plugin->ColorInt2Color
 			($this->plugin->teamIntToColorInt((int)
@@ -139,25 +132,25 @@ class BwAsker extends Task
 			}
 		}
 		if($otherplayers == false) {
-			foreach ($players as $person) {
-				$pname = $person->getName();
-				$cp = new Config("/cloud/users/$pname.yml", 2);
-				$cp->set("pos", false);
-				$cp->set("bw". false);
-				$cp->save();
-				$person->getInventory()->clearAll();
-				$levelname = $player->getLevel()->getFolderName();
-				$player->getLevel()->unload();
-				$this->plugin->getServer()->loadLevel("$levelname");
-				$this->plugin->getServer()->getLevelByName("$levelname")->setAutoSave(false);
-				$person->teleport($this->plugin->getServer()->getDefaultLevel()->getSafeSpawn());
-			}
+			$c->set("pos", false);
+			$c->set("bw", false);
+			$c->save();
+			$player->teleport($this->plugin->getServer()->getDefaultLevel()->getSafeSpawn());
+			$player->getInventory()->clearAll();
+			$player->setLevel(0);
+			$arena->unload();
+			$this->plugin->getServer()->loadLevel($arenaname);
+			$this->plugin->getServer()->getLevelByName($arenaname)->setAutoSave(false);
 			$ca->set("busy", false);
+			$ca->set("players", 0);
+			$ca->set("countdown", 60);
 			$ca->save();
+			$ca->set("restart", true);
+			$ca->save();
+			$this->plugin->getScheduler()->scheduleDelayedTask(new SignReloader($this->plugin, $player->getLevel()), 40);
 			$this->plugin->getScheduler()->cancelTask($this->getTaskId());
-
 		}
-		if($height < 0) {
+		if($height < 1) {
 			if($wool == true) {
 				$spawn = (array)$ca->get("p$pos");
 				$pos = new Position($spawn['0'], $spawn['1'], $spawn['2']);

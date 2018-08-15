@@ -50,12 +50,22 @@ class BwSignUpdater extends Task
 				$counter++;
 			}
 		}
+		if($counter == 1 || $counter == 0) {
+			$c->set("busy", false);
+			$c->save();
+		}
 		$dimension = $c->get("dimension");
-		$xdimension = $c->get("dimension");
-		str_replace("*", "x", $xdimension);
-		$sign->setLine(1, f::DARK_GRAY."[".f::GREEN."$xdimension".f::DARK_GRAY."]");
+		$sign->setLine(1, f::DARK_GRAY."[".f::GREEN."$dimension".f::DARK_GRAY."]");
 		$playeramout = eval("return $dimension;");
 		$sign->setLine(2, f::YELLOW."$counter ".f::DARK_GRAY."/ ".f::GREEN."$playeramout");
+
+		$restart = $c->get("restart");
+		if($restart) {
+			$c->set("restart", false);
+			$c->save();
+			$this->plugin->getScheduler()->cancelTask($this->getTaskId());
+		}
+
 		if($busy) {
 			$sign->setLine(0, f::RED."Bedwars");
 			$pos = new Position($sign->asPosition()->getX() - 1, $sign->asPosition()->getY(), $sign->asPosition()->getZ(), $sign->getLevel());
@@ -65,32 +75,6 @@ class BwSignUpdater extends Task
 				$block instanceof Clay ||
 				$block instanceof Sandstone) {
 				$sign->getLevel()->setBlock($pos, Block::get(Block::STAINED_CLAY, 14));
-			} else {
-				$pos = new Position($sign->asPosition()->getX(), $sign->asPosition()->getY(), $sign->asPosition()->getZ() - 1, $sign->getLevel());
-				if ($block instanceof StainedClay ||
-					$block instanceof HardenedClay ||
-					$block instanceof Clay ||
-					$block instanceof Sandstone) {
-					$sign->getLevel()->setBlock($pos, Block::get(Block::STAINED_CLAY, 14));
-				}
-				else {
-					$pos = new Position($sign->asPosition()->getX(), $sign->asPosition()->getY(), $sign->asPosition()->getZ() + 1, $sign->getLevel());
-					if ($block instanceof StainedClay ||
-						$block instanceof HardenedClay ||
-						$block instanceof Clay ||
-						$block instanceof Sandstone) {
-						$sign->getLevel()->setBlock($pos, Block::get(Block::STAINED_CLAY, 14));
-					}
-					else {
-						$pos = new Position($sign->asPosition()->getX() + 1, $sign->asPosition()->getY(), $sign->asPosition()->getZ(), $sign->getLevel());
-						if ($block instanceof StainedClay ||
-							$block instanceof HardenedClay ||
-							$block instanceof Clay ||
-							$block instanceof Sandstone) {
-							$sign->getLevel()->setBlock($pos, Block::get(Block::STAINED_CLAY, 14));
-						}
-					}
-				}
 			}
 		}
 		if(!$busy) {
@@ -103,7 +87,6 @@ class BwSignUpdater extends Task
 				$block instanceof Sandstone) {
 				$sign->getLevel()->setBlock($pos, Block::get(Block::STAINED_CLAY, 5));
 			}
-
 		}
 	}
 }

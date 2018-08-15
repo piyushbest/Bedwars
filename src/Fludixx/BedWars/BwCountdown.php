@@ -167,6 +167,7 @@ class BwCountdown extends Task
 					$cp->set("bwplays", (int)$cp->get("bwplays")+1);$cp->save();
 					$pos = new Position($spawn[0], $spawn[1], $spawn[2], $this->level);
 					$player->teleport($pos);
+					$player->setGamemode(2);
 					$this->plugin->getEq($player);
 					$this->plugin->getScheduler()->scheduleRepeatingTask(new BwAsker($this->plugin, $player), 5);
 					$this->plugin->getLogger()->info("Asker Task hat den Wert '$pname' bekommen.");
@@ -182,7 +183,7 @@ class BwCountdown extends Task
 					$item->kill();
 				}
 			}
-			$this->plugin->getScheduler()->scheduleRepeatingTask(new SpawnTask($this->plugin, $this->level), 10);
+			$this->plugin->getScheduler()->scheduleRepeatingTask(new SpawnTask($this->plugin, $this->level), 15);
 			$this->plugin->getScheduler()->scheduleRepeatingTask(new SpawnIronTask($this->plugin, $this->level), 20 * 30);
 			$this->plugin->getScheduler()->scheduleRepeatingTask(new SpawnGoldTask($this->plugin, $this->level), 20 * 60);
 			$this->plugin->getScheduler()->cancelTask($this->getTaskId());

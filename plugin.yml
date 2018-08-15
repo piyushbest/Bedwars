@@ -10,6 +10,8 @@ commands:
     description: "Bedwars Sign Command"
   stats:
       description: "Bedwars Stats"
+  bwupdate:
+      description: "Start SignUpdater"
 permissions:
   bw.start:
     default: op
