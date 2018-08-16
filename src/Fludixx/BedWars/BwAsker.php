@@ -123,7 +123,7 @@ class BwAsker extends Task
 		$players = $this->plugin->getServer()->getOnlinePlayers();
 		$otherplayers = false;
 		foreach($players as $person) {
-			if($person->getLevel()->getFolderName() == $player->getLevel()->getFolderName()) {
+			if($person->getLevel()->getFolderName() == $player->getLevel()->getFolderName() && $person->getGamemode() ==  0) {
 				$pname = $person->getName();
 				$cp = new Config("/cloud/users/$pname.yml", 2);
 				if ($cp->get("pos") != $c->get("pos")) {
@@ -132,6 +132,14 @@ class BwAsker extends Task
 			}
 		}
 		if($otherplayers == false) {
+			$players = $this->plugin->getServer()->getOnlinePlayers();
+			foreach($players as $person) {
+				if($person->getLevel()->getFolderName() == $player->getLevel()->getFolderName()) {
+					if($person->getGamemode() == 3) {
+						$person->teleport($this->plugin->getServer()->getDefaultLevel()->getSafeSpawn());
+					}
+				}
+			}
 			$c->set("pos", false);
 			$c->set("bw", false);
 			$c->save();
