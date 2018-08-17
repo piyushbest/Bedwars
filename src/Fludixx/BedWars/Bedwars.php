@@ -53,8 +53,9 @@ class Bedwars extends PluginBase implements Listener {
 		//$running = $sagiri->isEnabled();
 		$this->getLogger()->info("Sagiri-API wird geladen...");
 		if($sagiri) {
-			$sagiri->getLogger()->info($sagiri::PREFIX."Das Plugin Bedwars fragt nach SagiriAPI, zugriff wird erteilt!");
-			$this->withSagiri = true;
+			$sagiri->getLogger()->info($sagiri::PREFIX."Anfrage wird gelesen...");
+			$op = $sagiri->getCoOp("Bedwars");
+			$this->withSagiri = $op;
 		} else {
 			$this->getLogger()->error(self::PREFIX."Konnte keinen Kontakt mit Sagiri aufnehmen!");
 			$this->withSagiri = false;
@@ -528,62 +529,67 @@ class Bedwars extends PluginBase implements Listener {
 				$text = $tile->getText();
 				if ($text['0'] == self::NAME) {
 					$player->sendMessage($this->prefix . "Du wirst Teleportiert...");
-					$player->setGamemode(2);
-					$cp = new Config("/cloud/users/$name.yml", Config::YAML);
-					$cp->set("pos", false);
-					$cp->save();
-					$this->getServer()->loadLevel((string)$text['3']);
-					$this->getServer()->getLevelByName((string)$text['3'])->setAutoSave(false);
-					$cplayercount = (int)$text[2][3];
-					$c = new Config("/cloud/bw/" . $text[3] . ".yml", Config::YAML);
-					$dimension = $c->get("dimension");
-					$playeramout = eval("return $dimension;");
-					if ($cplayercount == $playeramout) {
-						$tile->setLine(0, f::RED . "Bedwars");
-						$player->sendMessage($this->prefix . "Uhh.. Die Arena ist voll oder schon gestartet.");
-						return false;
-					} else {
-						$cplayercount = $cplayercount + 1;
-						$tile->setLine(2, f::YELLOW . "$cplayercount " . f::DARK_GRAY . "/ " . f::GREEN . "$playeramout");
-						$arena = $this->getServer()->getLevelByName((string)$text['3']);
-						$arena->setAutoSave(false);
-						$pos = $arena->getSafeSpawn()->asPosition();
-						$player->setGamemode(0);
-						$player->teleport($pos);
-						$this->getWaitingItems($player);
-						$players = $this->getServer()->getOnlinePlayers();
-						$counter = 0;
-						$playerarray = array();
-						counter:
-						foreach ($players as $person) {
-							$level = $person->getLevel()->getFolderName();
-							if ($level == $arena->getFolderName()) {
-								$counter++;
-								$playerarray[] = $person;
-							}
-						}
-						$minplayers = (int)substr($dimension, -1)+1;
-						$maxTeams = $dimension[0];
-						if($counter > $dimension) {
-							$counter--;
-							goto counter;
-						}
-						$cp->set("team", $counter);
+					if ($this->withSagiri == true) {
+						$player->setGamemode(2);
+						$cp = new Config("/cloud/users/$name.yml", Config::YAML);
+						$cp->set("pos", false);
 						$cp->save();
-						$this->sagiri->sendLevelBrodcast($this->prefix."Es werden min. $minplayers Spieler benötigt!", $arena, false);
-						if($counter == $minplayers) {
-							$this->getLogger()->info("Es sind $minplayers Spieler in der Arena ".$arena->getFolderName());
-							foreach($playerarray as $person) {
-								$person->sendMessage($this->prefix."Das Spiel beginnt in 60 Sekunden!");
-							}
-							$c = new Config("/cloud/bw/".$arena->getFolderName().".yml", Config::YAML);
-							$c->set("countdown", 60);
-							$c->save();
-							$this->getScheduler()->scheduleRepeatingTask(new BwCountdown($this, $arena, $minplayers), 20);
-							$this->getLogger()->info("Countdown eingeleitet!");
+						$this->getServer()->loadLevel((string)$text['3']);
+						$this->getServer()->getLevelByName((string)$text['3'])->setAutoSave(false);
+						$cplayercount = (int)$text[2][3];
+						$c = new Config("/cloud/bw/" . $text[3] . ".yml", Config::YAML);
+						$dimension = $c->get("dimension");
+						$playeramout = eval("return $dimension;");
+						if ($cplayercount == $playeramout) {
+							$tile->setLine(0, f::RED . "Bedwars");
+							$player->sendMessage($this->prefix . "Uhh.. Die Arena ist voll oder schon gestartet.");
 							return false;
+						} else {
+							$cplayercount = $cplayercount + 1;
+							$tile->setLine(2, f::YELLOW . "$cplayercount " . f::DARK_GRAY . "/ " . f::GREEN . "$playeramout");
+							$arena = $this->getServer()->getLevelByName((string)$text['3']);
+							$arena->setAutoSave(false);
+							$pos = $arena->getSafeSpawn()->asPosition();
+							$player->setGamemode(0);
+							$player->teleport($pos);
+							$this->getWaitingItems($player);
+							$players = $this->getServer()->getOnlinePlayers();
+							$counter = 0;
+							$playerarray = array();
+							counter:
+							foreach ($players as $person) {
+								$level = $person->getLevel()->getFolderName();
+								if ($level == $arena->getFolderName()) {
+									$counter++;
+									$playerarray[] = $person;
+								}
+							}
+							$minplayers = (int)substr($dimension, -1) + 1;
+							$maxTeams = $dimension[0];
+							if ($counter > $dimension) {
+								$counter--;
+								goto counter;
+							}
+							$cp->set("team", $counter);
+							$cp->save();
+							$this->sagiri->sendLevelBrodcast($this->prefix . "Es werden min. $minplayers Spieler benötigt!", $arena, false);
+							if ($counter == $minplayers) {
+								$this->getLogger()->info("Es sind $minplayers Spieler in der Arena " . $arena->getFolderName());
+								foreach ($playerarray as $person) {
+									$person->sendMessage($this->prefix . "Das Spiel beginnt in 60 Sekunden!");
+								}
+								$c = new Config("/cloud/bw/" . $arena->getFolderName() . ".yml", Config::YAML);
+								$c->set("countdown", 60);
+								$c->save();
+								$this->getScheduler()->scheduleRepeatingTask(new BwCountdown($this, $arena, $minplayers), 20);
+								$this->getLogger()->info("Countdown eingeleitet!");
+								return false;
+							}
+							$this->sagiri->sendLevelBrodcast($this->prefix . $player->getName() . " joined the Game! " . f::DARK_GRAY . "[" . f::YELLOW . "$counter" . f::DARK_GRAY . "]", $arena, false);
 						}
-						$this->sagiri->sendLevelBrodcast($this->prefix.$player->getName()." joined the Game! ".f::DARK_GRAY."[" .f::YELLOW."$counter".f::DARK_GRAY."]", $arena, false);
+					} else {
+						$player->sendMessage(self::PREFIX."Sorry! Sagiri-API wasn't found on the Server :(");
+						return false;
 					}
 				}
 			}
