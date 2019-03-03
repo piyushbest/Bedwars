@@ -2,7 +2,6 @@ main: Fludixx\BedWars\Bedwars
 api: 3.0.0
 name: Bedwars
 author: Fludixx
-depend: ['Sagiri-API']
 description: Bedwars Plugin for Pocketmine MP
 version: 1
 commands:
